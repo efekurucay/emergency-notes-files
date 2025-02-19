@@ -46,8 +46,8 @@ Live Demo: https://efekurucay.com/livedemo/emergency-notes/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/emergency-notes.git
-cd emergency-notes
+git clone https://github.com/efekurucay/emergency-notes-files.git
+cd emergency-notes-files
 ```
 
 2. Install dependencies:
