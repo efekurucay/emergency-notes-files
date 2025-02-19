@@ -2,7 +2,7 @@
 
 A modern web application for managing emergency notes, files, and their relationships. Built with Node.js and Express.js, featuring a dark theme and an interactive graph view.
 
-Live Demo: https://efekurucay.com/livedemo/emergency-notes/
+Live Demo: https://eferoam.xyz
 
 ![Emergency Notes App](ss.png)
 
