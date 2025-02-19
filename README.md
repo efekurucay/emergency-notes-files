@@ -4,7 +4,7 @@ A modern web application for managing emergency notes, files, and their relation
 
 Live Demo: https://efekurucay.com/livedemo/emergency-notes/
 
-![Emergency Notes App](screenshots/ss.png)
+![Emergency Notes App](ss.png)
 
 ## Features
 
