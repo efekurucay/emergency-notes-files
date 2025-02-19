@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acil Durum Notları</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="main-container">
+        <div class="container py-4">
+            <div class="header mb-5">
+                <div class="logo-container">
+                    <div class="logo">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <h1 class="app-title">Acil Durum Notları</h1>
+                </div>
+                <div class="mt-3">
+                    <a href="/graph" class="btn btn-outline-primary">
+                        <i class="bi bi-diagram-3-fill"></i>
+                        İlişki Grafiği
+                    </a>
+                </div>
+            </div>
+
+            <!-- Arama ve Filtreleme -->
+            <div class="search-container mb-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="searchInput" class="form-control" placeholder="Notlar ve dosyalar içinde ara...">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="filter-buttons">
+                            <button class="btn btn-filter active" data-filter="all">Tümü</button>
+                            <button class="btn btn-filter" data-filter="urgent">Acil</button>
+                            <button class="btn btn-filter" data-filter="important">Önemli</button>
+                            <button class="btn btn-filter" data-filter="normal">Normal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <!-- Not Ekleme Formu -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title">
+                                <i class="bi bi-pencil-square"></i>
+                                Not Ekle
+                            </h3>
+                            <form action="/add-note" method="POST">
+                                <div class="mb-3">
+                                    <textarea name="note" class="form-control" rows="3" 
+                                        placeholder="Notunuzu buraya yazın..." required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Önem Derecesi</label>
+                                    <select name="priority" class="form-control">
+                                        <option value="normal">Normal</option>
+                                        <option value="important">Önemli</option>
+                                        <option value="urgent">Acil</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Etiketler</label>
+                                    <input type="text" name="tags" class="form-control" 
+                                        placeholder="Etiketleri virgülle ayırarak yazın">
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i>
+                                    Not Ekle
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dosya Yükleme Formu -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title">
+                                <i class="bi bi-cloud-upload"></i>
+                                Dosya Yükle
+                            </h3>
+                            <form action="/upload" method="POST" enctype="multipart/form-data">
+                                <div class="upload-area" id="dropZone">
+                                    <i class="bi bi-cloud-arrow-up-fill"></i>
+                                    <p>Dosyaları buraya sürükleyin veya seçin</p>
+                                    <input type="file" name="file" class="form-control" required>
+                                </div>
+                                <button type="submit" class="btn btn-success mt-3">
+                                    <i class="bi bi-upload"></i>
+                                    Dosya Yükle
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-2">
+                <!-- Notlar Listesi -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title">
+                                <i class="bi bi-journal-text"></i>
+                                Notlar
+                            </h3>
+                            <div class="list-group notes-list">
+                                <% notes.forEach(function(note) { %>
+                                    <div class="list-group-item note-item <%= note.priority %>" data-note-id="<%= note.id %>">
+                                        <div class="note-header">
+                                            <div class="priority-badge">
+                                                <% if (note.priority === 'urgent') { %>
+                                                    <span class="badge bg-danger">Acil</span>
+                                                <% } else if (note.priority === 'important') { %>
+                                                    <span class="badge bg-warning">Önemli</span>
+                                                <% } %>
+                                            </div>
+                                            <div class="note-date">
+                                                <%= note.date %>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-start mt-2">
+                                            <span class="note-content flex-grow-1"><%- note.htmlContent %></span>
+                                            <div class="btn-group ms-2">
+                                                <button class="btn btn-sm btn-outline-primary edit-note" title="Düzenle">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <form action="/delete-note" method="POST" class="d-inline">
+                                                    <input type="hidden" name="noteId" value="<%= note.id %>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                        onclick="return confirm('Bu notu silmek istediğinizden emin misiniz?')"
+                                                        title="Sil">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        <% if (note.tags && note.tags.length > 0) { %>
+                                            <div class="note-tags mt-2">
+                                                <% note.tags.forEach(function(tag) { %>
+                                                    <span class="badge bg-secondary"><%= tag %></span>
+                                                <% }); %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dosyalar Listesi -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title">
+                                <i class="bi bi-files"></i>
+                                Yüklenen Dosyalar
+                            </h3>
+                            <div class="list-group files-list">
+                                <% files.forEach(function(file) { %>
+                                    <div class="list-group-item file-item" data-filename="<%= file.originalName %>">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <a href="<%= file.path %>" class="file-link" target="_blank">
+                                                <i class="bi <%= getFileIcon(file.originalName) %>"></i>
+                                                <%= file.originalName %>
+                                            </a>
+                                            <div class="file-actions">
+                                                <span class="file-date"><%= file.date %></span>
+                                                <form action="/delete-file" method="POST">
+                                                    <input type="hidden" name="fileName" value="<%= file.name %>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                        onclick="return confirm('Bu dosyayı silmek istediğinizden emin misiniz?')"
+                                                        title="Sil">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Arama fonksiyonu
+            const searchInput = document.getElementById('searchInput');
+            const noteItems = document.querySelectorAll('.note-item');
+            const fileItems = document.querySelectorAll('.file-item');
+
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+
+                noteItems.forEach(item => {
+                    const content = item.querySelector('.note-content').textContent.toLowerCase();
+                    const tags = Array.from(item.querySelectorAll('.note-tags .badge'))
+                        .map(tag => tag.textContent.toLowerCase());
+                    
+                    if (content.includes(searchTerm) || tags.some(tag => tag.includes(searchTerm))) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                fileItems.forEach(item => {
+                    const filename = item.dataset.filename.toLowerCase();
+                    if (filename.includes(searchTerm)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+
+            // Filtreleme
+            const filterButtons = document.querySelectorAll('.btn-filter');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const filter = this.dataset.filter;
+                    
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+
+                    noteItems.forEach(item => {
+                        if (filter === 'all' || item.classList.contains(filter)) {
+                            item.style.display = '';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            // Sürükle-bırak dosya yükleme
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = dropZone.querySelector('input[type="file"]');
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                dropZone.classList.add('highlight');
+            }
+
+            function unhighlight(e) {
+                dropZone.classList.remove('highlight');
+            }
+
+            dropZone.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                fileInput.files = files;
+            }
+
+            // Not düzenleme işlemleri
+            document.querySelectorAll('.edit-note').forEach(button => {
+                button.addEventListener('click', function() {
+                    const noteItem = this.closest('.note-item');
+                    const noteContent = noteItem.querySelector('.note-content');
+                    const noteId = noteItem.dataset.noteId;
+                    
+                    // HTML içeriğinden saf metni çıkar
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = noteContent.innerHTML;
+                    const links = tempDiv.getElementsByTagName('a');
+                    // Bağlantıları orijinal URL'leriyle değiştir
+                    for (let i = links.length - 1; i >= 0; i--) {
+                        const link = links[i];
+                        const url = link.getAttribute('href');
+                        const textNode = document.createTextNode(url);
+                        link.parentNode.replaceChild(textNode, link);
+                    }
+                    const currentContent = tempDiv.textContent.trim();
+
+                    // Düzenleme alanını oluştur
+                    const textarea = document.createElement('textarea');
+                    textarea.className = 'form-control mb-2';
+                    textarea.value = currentContent;
+                    
+                    const buttonGroup = document.createElement('div');
+                    buttonGroup.className = 'button-group';
+                    
+                    const saveButton = document.createElement('button');
+                    saveButton.className = 'btn btn-sm btn-success';
+                    saveButton.innerHTML = '<i class="bi bi-check-lg"></i> Kaydet';
+                    
+                    const cancelButton = document.createElement('button');
+                    cancelButton.className = 'btn btn-sm btn-secondary ms-2';
+                    cancelButton.innerHTML = '<i class="bi bi-x-lg"></i> İptal';
+
+                    buttonGroup.appendChild(saveButton);
+                    buttonGroup.appendChild(cancelButton);
+
+                    // Mevcut içeriği gizle
+                    noteContent.style.display = 'none';
+                    this.closest('.btn-group').style.display = 'none';
+
+                    // Düzenleme alanını ekle
+                    noteItem.insertBefore(textarea, noteContent);
+                    noteItem.appendChild(buttonGroup);
+
+                    // Kaydet butonu işlevi
+                    saveButton.addEventListener('click', function() {
+                        const newContent = textarea.value;
+                        fetch('/edit-note', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                noteId: noteId,
+                                content: newContent
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                noteContent.innerHTML = data.htmlContent;
+                                noteContent.style.display = '';
+                                button.closest('.btn-group').style.display = '';
+                                textarea.remove();
+                                buttonGroup.remove();
+                            }
+                        });
+                    });
+
+                    // İptal butonu işlevi
+                    cancelButton.addEventListener('click', function() {
+                        noteContent.style.display = '';
+                        button.closest('.btn-group').style.display = '';
+                        textarea.remove();
+                        buttonGroup.remove();
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

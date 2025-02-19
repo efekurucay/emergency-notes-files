@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Not İlişkileri - Graph View</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script type="text/javascript" src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        #graph-container {
+            width: 100%;
+            height: 80vh;
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            background-color: var(--card-background);
+        }
+        .legend {
+            padding: 1rem;
+            background-color: var(--card-background);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        .controls {
+            margin-bottom: 1rem;
+        }
+        .controls .btn {
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        #detail-panel {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background-color: var(--card-background);
+            border-left: 1px solid var(--border-color);
+            padding: 1rem;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        #detail-panel.show {
+            right: 0;
+        }
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+        .filter-group .form-check {
+            margin-bottom: 0.5rem;
+        }
+        .node-details {
+            padding: 1rem;
+            background-color: var(--background-color);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .node-details h4 {
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+        .node-details p {
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+        }
+        .node-details .badge {
+            margin-right: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="container-fluid py-4">
+            <div class="header mb-4">
+                <div class="logo-container">
+                    <div class="logo">
+                        <i class="bi bi-diagram-3-fill"></i>
+                    </div>
+                    <h1 class="app-title">Not İlişkileri</h1>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="legend">
+                        <h5 class="mb-3">Açıklamalar</h5>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #3b82f6;"></div>
+                            <span>Notlar</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #10b981;"></div>
+                            <span>Etiketler</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #f59e0b;"></div>
+                            <span>Bağlantılar</span>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <h5 class="mb-3">Filtreler</h5>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showNotes" checked>
+                            <label class="form-check-label" for="showNotes">Notları Göster</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showTags" checked>
+                            <label class="form-check-label" for="showTags">Etiketleri Göster</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showUrls" checked>
+                            <label class="form-check-label" for="showUrls">Bağlantıları Göster</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showCommonTags" checked>
+                            <label class="form-check-label" for="showCommonTags">Ortak Etiketleri Göster</label>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <h5 class="mb-3">Kontroller</h5>
+                        <button class="btn btn-outline-primary" id="zoomIn">
+                            <i class="bi bi-zoom-in"></i>
+                            Yakınlaştır
+                        </button>
+                        <button class="btn btn-outline-primary" id="zoomOut">
+                            <i class="bi bi-zoom-out"></i>
+                            Uzaklaştır
+                        </button>
+                        <button class="btn btn-outline-primary" id="centerGraph">
+                            <i class="bi bi-arrows-move"></i>
+                            Ortala
+                        </button>
+                        <button class="btn btn-outline-success" id="exportPNG">
+                            <i class="bi bi-download"></i>
+                            PNG Olarak İndir
+                        </button>
+                    </div>
+
+                    <a href="/" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-arrow-left"></i>
+                        Ana Sayfaya Dön
+                    </a>
+                </div>
+                <div class="col-md-9">
+                    <div id="graph-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detay Paneli -->
+    <div id="detail-panel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="m-0">Detaylar</h3>
+            <button class="btn btn-sm btn-outline-secondary" id="closeDetail">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div id="node-details"></div>
+    </div>
+
+    <script>
+        let network = null;
+        let graphData = null;
+
+        // Graph verilerini sunucudan al
+        fetch('/api/graph-data')
+            .then(response => response.json())
+            .then(data => {
+                graphData = data;
+                initializeGraph(data);
+            });
+
+        function initializeGraph(data) {
+            const container = document.getElementById('graph-container');
+            
+            // Graph seçenekleri
+            const options = {
+                nodes: {
+                    shape: 'dot',
+                    size: 20,
+                    font: {
+                        size: 14,
+                        color: '#f1f5f9'
+                    },
+                    borderWidth: 2,
+                    shadow: true
+                },
+                edges: {
+                    width: 2,
+                    color: { inherit: 'both' },
+                    smooth: {
+                        type: 'continuous'
+                    }
+                },
+                physics: {
+                    stabilization: false,
+                    barnesHut: {
+                        gravitationalConstant: -80000,
+                        springConstant: 0.001,
+                        springLength: 200
+                    }
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 200,
+                    zoomView: true
+                }
+            };
+
+            // Graph'ı oluştur
+            network = new vis.Network(container, data, options);
+
+            // Düğüme tıklama olayı
+            network.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const node = data.nodes.find(n => n.id === nodeId);
+                    if (node) {
+                        showNodeDetails(node);
+                    }
+                }
+            });
+
+            // Kontrol butonları
+            document.getElementById('zoomIn').addEventListener('click', () => {
+                network.moveTo({
+                    scale: network.getScale() * 1.2
+                });
+            });
+
+            document.getElementById('zoomOut').addEventListener('click', () => {
+                network.moveTo({
+                    scale: network.getScale() * 0.8
+                });
+            });
+
+            document.getElementById('centerGraph').addEventListener('click', () => {
+                network.fit();
+            });
+
+            document.getElementById('exportPNG').addEventListener('click', exportToPNG);
+
+            // Filtre kontrolleri
+            document.getElementById('showNotes').addEventListener('change', updateFilters);
+            document.getElementById('showTags').addEventListener('change', updateFilters);
+            document.getElementById('showUrls').addEventListener('change', updateFilters);
+            document.getElementById('showCommonTags').addEventListener('change', updateFilters);
+
+            // Detay paneli kontrolleri
+            document.getElementById('closeDetail').addEventListener('click', () => {
+                document.getElementById('detail-panel').classList.remove('show');
+            });
+        }
+
+        function showNodeDetails(node) {
+            const detailPanel = document.getElementById('detail-panel');
+            const nodeDetails = document.getElementById('node-details');
+            let content = '';
+
+            if (node.id.startsWith('note-')) {
+                content = `
+                    <div class="node-details">
+                        <h4>Not Detayları</h4>
+                        <p>${node.title}</p>
+                    </div>
+                `;
+            } else if (node.id.startsWith('tag-')) {
+                const relatedNotes = findRelatedNotes(node.id);
+                content = `
+                    <div class="node-details">
+                        <h4>Etiket: ${node.label}</h4>
+                        <p>İlgili Not Sayısı: ${relatedNotes.length}</p>
+                        <div class="mt-3">
+                            <h5>İlgili Notlar:</h5>
+                            ${relatedNotes.map(note => `
+                                <div class="mb-2 p-2 border-bottom">
+                                    ${note.title}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (node.id.startsWith('url-')) {
+                content = `
+                    <div class="node-details">
+                        <h4>Bağlantı Detayları</h4>
+                        <p>URL: <a href="${node.title}" target="_blank">${node.title}</a></p>
+                    </div>
+                `;
+            }
+
+            nodeDetails.innerHTML = content;
+            detailPanel.classList.add('show');
+        }
+
+        function findRelatedNotes(tagId) {
+            const relatedNotes = [];
+            graphData.edges.forEach(edge => {
+                if (edge.to === tagId) {
+                    const noteNode = graphData.nodes.find(n => n.id === edge.from);
+                    if (noteNode) {
+                        relatedNotes.push(noteNode);
+                    }
+                }
+            });
+            return relatedNotes;
+        }
+
+        function updateFilters() {
+            const showNotes = document.getElementById('showNotes').checked;
+            const showTags = document.getElementById('showTags').checked;
+            const showUrls = document.getElementById('showUrls').checked;
+            const showCommonTags = document.getElementById('showCommonTags').checked;
+
+            const filteredNodes = graphData.nodes.filter(node => {
+                if (node.id.startsWith('note-')) return showNotes;
+                if (node.id.startsWith('tag-')) return showTags;
+                if (node.id.startsWith('url-')) return showUrls;
+                return true;
+            });
+
+            const filteredEdges = graphData.edges.filter(edge => {
+                const fromNode = graphData.nodes.find(n => n.id === edge.from);
+                const toNode = graphData.nodes.find(n => n.id === edge.to);
+
+                if (!fromNode || !toNode) return false;
+
+                if (edge.dashes && !showCommonTags) return false;
+
+                if (!showNotes && (fromNode.id.startsWith('note-') || toNode.id.startsWith('note-'))) return false;
+                if (!showTags && (fromNode.id.startsWith('tag-') || toNode.id.startsWith('tag-'))) return false;
+                if (!showUrls && (fromNode.id.startsWith('url-') || toNode.id.startsWith('url-'))) return false;
+
+                return true;
+            });
+
+            network.setData({ nodes: filteredNodes, edges: filteredEdges });
+        }
+
+        function exportToPNG() {
+            const container = document.getElementById('graph-container');
+            html2canvas(container).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'not-iliskileri.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html> 
